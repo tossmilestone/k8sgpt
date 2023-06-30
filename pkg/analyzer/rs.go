@@ -15,6 +15,7 @@ package analyzer
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/k8sgpt-ai/k8sgpt/pkg/common"
 	"github.com/k8sgpt-ai/k8sgpt/pkg/util"
@@ -57,6 +58,15 @@ func (ReplicaSetAnalyzer) Analyze(a common.Analyzer) ([]common.Result, error) {
 			}
 		}
 		if len(failures) > 0 {
+			evt, _ := FetchLatestEvent(a.Context, a.Client, rs.Namespace, rs.Name)
+			if evt != nil {
+				if strings.Contains(evt.Reason, "Failed") && evt.Message != "" {
+					failures = append(failures, common.Failure{
+						Text:      evt.Message,
+						Sensitive: []common.Sensitive{},
+					})
+				}
+			}
 			preAnalysis[fmt.Sprintf("%s/%s", rs.Namespace, rs.Name)] = common.PreAnalysis{
 				ReplicaSet:     rs,
 				FailureDetails: failures,

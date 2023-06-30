@@ -105,6 +105,15 @@ func (ServiceAnalyzer) Analyze(a common.Analyzer) ([]common.Result, error) {
 		}
 
 		if len(failures) > 0 {
+			evt, _ := FetchLatestEvent(a.Context, a.Client, ep.Namespace, ep.Name)
+			if evt != nil {
+				if evt.Reason != "" && evt.Message != "" {
+					failures = append(failures, common.Failure{
+						Text:      evt.Message,
+						Sensitive: []common.Sensitive{},
+					})
+				}
+			}
 			preAnalysis[fmt.Sprintf("%s/%s", ep.Namespace, ep.Name)] = common.PreAnalysis{
 				Endpoint:       ep,
 				FailureDetails: failures,

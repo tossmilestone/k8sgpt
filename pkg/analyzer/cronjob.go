@@ -27,6 +27,14 @@ import (
 
 type CronJobAnalyzer struct{}
 
+var CronJobNormalEventsReason = map[string]bool{
+	"SawCompletedJob":  true,
+	"MissingJob":       true,
+	"SuccessfulCreate": true,
+	"SuccessfulDelete": true,
+	"JobAlreadyActive": true,
+}
+
 func (analyzer CronJobAnalyzer) Analyze(a common.Analyzer) ([]common.Result, error) {
 
 	kind := "CronJob"
@@ -117,6 +125,15 @@ func (analyzer CronJobAnalyzer) Analyze(a common.Analyzer) ([]common.Result, err
 		}
 
 		if len(failures) > 0 {
+			evt, _ := FetchLatestEvent(a.Context, a.Client, cronJob.Namespace, cronJob.Name)
+			if evt != nil {
+				if !CronJobNormalEventsReason[evt.Reason] && evt.Message != "" {
+					failures = append(failures, common.Failure{
+						Text:      evt.Message,
+						Sensitive: []common.Sensitive{},
+					})
+				}
+			}
 			preAnalysis[fmt.Sprintf("%s/%s", cronJob.Namespace, cronJob.Name)] = common.PreAnalysis{
 				FailureDetails: failures,
 			}

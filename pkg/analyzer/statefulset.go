@@ -25,6 +25,12 @@ import (
 
 type StatefulSetAnalyzer struct{}
 
+var StatefulSetNormalEventsReason = map[string]bool{
+	"SuccessfulCreate": true,
+	"SuccessfulUpdate": true,
+	"SuccessfulDelete": true,
+}
+
 func (StatefulSetAnalyzer) Analyze(a common.Analyzer) ([]common.Result, error) {
 
 	kind := "StatefulSet"
@@ -94,6 +100,15 @@ func (StatefulSetAnalyzer) Analyze(a common.Analyzer) ([]common.Result, error) {
 			}
 		}
 		if len(failures) > 0 {
+			evt, _ := FetchLatestEvent(a.Context, a.Client, sts.Namespace, sts.Name)
+			if evt != nil {
+				if !StatefulSetNormalEventsReason[evt.Reason] && evt.Message != "" {
+					failures = append(failures, common.Failure{
+						Text:      evt.Message,
+						Sensitive: []common.Sensitive{},
+					})
+				}
+			}
 			preAnalysis[fmt.Sprintf("%s/%s", sts.Namespace, sts.Name)] = common.PreAnalysis{
 				StatefulSet:    sts,
 				FailureDetails: failures,

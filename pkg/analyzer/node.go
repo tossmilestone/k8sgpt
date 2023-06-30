@@ -58,6 +58,16 @@ func (NodeAnalyzer) Analyze(a common.Analyzer) ([]common.Result, error) {
 		}
 
 		if len(failures) > 0 {
+			// Fetch events for node
+			evt, _ := FetchLatestEvent(a.Context, a.Client, node.Namespace, node.Name)
+			if evt != nil {
+				if evt.Reason != "NodeReady" && evt.Message != "" {
+					failures = append(failures, common.Failure{
+						Text:      evt.Message,
+						Sensitive: []common.Sensitive{},
+					})
+				}
+			}
 			preAnalysis[node.Name] = common.PreAnalysis{
 				Node:           node,
 				FailureDetails: failures,

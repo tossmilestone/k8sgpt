@@ -29,6 +29,11 @@ import (
 type DeploymentAnalyzer struct {
 }
 
+var DeploymentNormalEventsReason = map[string]bool{
+	"DeploymentRollback": true,
+	"ScalingReplicaSet":  true,
+}
+
 // Analyze scans all namespaces for Deployments with misconfigurations
 func (d DeploymentAnalyzer) Analyze(a common.Analyzer) ([]common.Result, error) {
 
@@ -72,6 +77,15 @@ func (d DeploymentAnalyzer) Analyze(a common.Analyzer) ([]common.Result, error) 
 				}})
 		}
 		if len(failures) > 0 {
+			evt, _ := FetchLatestEvent(a.Context, a.Client, deployment.Namespace, deployment.Name)
+			if evt != nil {
+				if !DeploymentNormalEventsReason[evt.Reason] && evt.Message != "" {
+					failures = append(failures, common.Failure{
+						Text:      evt.Message,
+						Sensitive: []common.Sensitive{},
+					})
+				}
+			}
 			preAnalysis[fmt.Sprintf("%s/%s", deployment.Namespace, deployment.Name)] = common.PreAnalysis{
 				FailureDetails: failures,
 				Deployment:     deployment,
