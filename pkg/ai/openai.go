@@ -63,7 +63,7 @@ func (c *OpenAIClient) GetCompletion(ctx context.Context, prompt string, promptT
 		Messages: []openai.ChatCompletionMessage{
 			{
 				Role:    "user",
-				Content: fmt.Sprintf(promptTmpl, c.language, prompt),
+				Content: fmt.Sprintf(promptTmpl, prompt, c.language),
 			},
 		},
 	})
