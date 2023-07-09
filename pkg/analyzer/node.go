@@ -63,7 +63,7 @@ func (NodeAnalyzer) Analyze(a common.Analyzer) ([]common.Result, error) {
 			if evt != nil {
 				if evt.Reason != "NodeReady" && evt.Message != "" {
 					failures = append(failures, common.Failure{
-						Text:      evt.Message,
+						Text:      fmt.Sprintf("Node %s/%s has error event %s", node.Namespace, node.Name, evt.Message),
 						Sensitive: []common.Sensitive{},
 					})
 				}

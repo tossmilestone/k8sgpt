@@ -104,7 +104,7 @@ func (StatefulSetAnalyzer) Analyze(a common.Analyzer) ([]common.Result, error) {
 			if evt != nil {
 				if !StatefulSetNormalEventsReason[evt.Reason] && evt.Message != "" {
 					failures = append(failures, common.Failure{
-						Text:      evt.Message,
+						Text:      fmt.Sprintf("StatefulSet %s/%s has error event %s", sts.Namespace, sts.Name, evt.Message),
 						Sensitive: []common.Sensitive{},
 					})
 				}

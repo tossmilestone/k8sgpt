@@ -93,7 +93,7 @@ func (PodAnalyzer) Analyze(a common.Analyzer) ([]common.Result, error) {
 					}
 					if evt.Reason == "Unhealthy" && evt.Message != "" {
 						failures = append(failures, common.Failure{
-							Text:      evt.Message,
+							Text:      fmt.Sprintf("Pod %s/%s has error event %s", pod.Namespace, pod.Name, evt.Message),
 							Sensitive: []common.Sensitive{},
 						})
 

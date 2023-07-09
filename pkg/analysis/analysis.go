@@ -250,8 +250,8 @@ func (a *Analysis) GetAIResults(output string, anonymize bool) error {
 		bar = progressbar.Default(int64(len(a.Results)))
 	}
 
-	for index, analysis := range a.Results {
-		var texts []string
+	var texts []string
+	for _, analysis := range a.Results {
 
 		for _, failure := range analysis.Error {
 			if anonymize {
@@ -261,42 +261,43 @@ func (a *Analysis) GetAIResults(output string, anonymize bool) error {
 			}
 			texts = append(texts, failure.Text)
 		}
-		// If the resource `Kind` comes from a "integration plugin", maybe a customized prompt template will be involved.
-		var promptTemplate string
-		if prompt, ok := ai.PromptMap[analysis.Kind]; ok {
-			promptTemplate = prompt
+	}
+	// If the resource `Kind` comes from a "integration plugin", maybe a customized prompt template will be involved.
+	var promptTemplate string
+	promptTemplate = ai.PromptMap["default"]
+	parsedText, err := a.AIClient.Parse(a.Context, texts, a.Cache, promptTemplate)
+	if err != nil {
+		// FIXME: can we avoid checking if output is json multiple times?
+		//   maybe implement the progress bar better?
+		if output != "json" {
+			_ = bar.Exit()
+		}
+
+		// Check for exhaustion
+		if strings.Contains(err.Error(), "status code: 429") {
+			return fmt.Errorf("exhausted API quota for AI provider %s: %v", a.AIClient.GetName(), err)
 		} else {
-			promptTemplate = ai.PromptMap["default"]
+			return fmt.Errorf("failed while calling AI provider %s: %v", a.AIClient.GetName(), err)
 		}
-		parsedText, err := a.AIClient.Parse(a.Context, texts, a.Cache, promptTemplate)
-		if err != nil {
-			// FIXME: can we avoid checking if output is json multiple times?
-			//   maybe implement the progress bar better?
-			if output != "json" {
-				_ = bar.Exit()
-			}
+	}
 
-			// Check for exhaustion
-			if strings.Contains(err.Error(), "status code: 429") {
-				return fmt.Errorf("exhausted API quota for AI provider %s: %v", a.AIClient.GetName(), err)
-			} else {
-				return fmt.Errorf("failed while calling AI provider %s: %v", a.AIClient.GetName(), err)
-			}
-		}
-
-		if anonymize {
+	if anonymize {
+		for _, analysis := range a.Results {
 			for _, failure := range analysis.Error {
 				for _, s := range failure.Sensitive {
 					parsedText = strings.ReplaceAll(parsedText, s.Masked, s.Unmasked)
 				}
 			}
 		}
+	}
 
-		analysis.Details = parsedText
-		if output != "json" {
-			_ = bar.Add(1)
-		}
-		a.Results[index] = analysis
+	if output != "json" {
+		_ = bar.Add(1)
+	}
+	a.Results = []common.Result{
+		{
+			Details: parsedText,
+		},
 	}
 	return nil
 }

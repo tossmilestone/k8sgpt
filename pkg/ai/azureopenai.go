@@ -51,7 +51,7 @@ func (c *AzureAIClient) GetCompletion(ctx context.Context, prompt string, prompt
 		Model: c.model,
 		Messages: []openai.ChatCompletionMessage{
 			{
-				Role:    openai.ChatMessageRoleUser,
+				Role:    openai.ChatMessageRoleSystem,
 				Content: fmt.Sprintf(promptTmpl, prompt, c.language),
 			},
 		},

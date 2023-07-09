@@ -81,7 +81,7 @@ func (d DeploymentAnalyzer) Analyze(a common.Analyzer) ([]common.Result, error) 
 			if evt != nil {
 				if !DeploymentNormalEventsReason[evt.Reason] && evt.Message != "" {
 					failures = append(failures, common.Failure{
-						Text:      evt.Message,
+						Text:      fmt.Sprintf("Deployment %s/%s has error event %s", deployment.Namespace, deployment.Name, evt.Message),
 						Sensitive: []common.Sensitive{},
 					})
 				}

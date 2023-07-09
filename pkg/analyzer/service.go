@@ -109,7 +109,7 @@ func (ServiceAnalyzer) Analyze(a common.Analyzer) ([]common.Result, error) {
 			if evt != nil {
 				if evt.Reason != "" && evt.Message != "" {
 					failures = append(failures, common.Failure{
-						Text:      evt.Message,
+						Text:      fmt.Sprintf("Endpoint %s/%s has error event %s", ep.Namespace, ep.Name, evt.Message),
 						Sensitive: []common.Sensitive{},
 					})
 				}
